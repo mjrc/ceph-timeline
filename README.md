@@ -2,8 +2,10 @@
 
 A forensic timeline utility for the Ceph Object Store. This utility is the product of the research peformed by Chris Kuipers and Mick Cox, for the Computer Crime & Forensics Course, System & Network Engineering, University of Amsterdam.  
 
-
-![SNE Logo](/images/sne.png) ![Ceph Logo](/images/ceph.png)
+<p align="center">
+  <img width="250" src="https://raw.githubusercontent.com/mjrc/ceph-timeline/master/images/sne.png">
+  <img width="250" src="https://raw.githubusercontent.com/mjrc/ceph-timeline/master/images/ceph.png">
+</p>
 
 
 ## Introduction ## 
