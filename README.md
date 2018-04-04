@@ -1,2 +1,21 @@
-# ceph-timeline
-A forensic timeline utility for the Ceph Object Store. 
+# Ceph Timeline Utility 
+
+A forensic timeline utility for the Ceph Object Store. This utility is the product of the research peformed by Chris Kuipers and Mick Cox, for the Computer Crime & Forensics Course, System & Network Engineering, University of Amsterdam.  
+
+
+## Introduction ## 
+
+Ceph is a distributed objec storage system developed for horizontal scaling and without invoking any single points of failure or major bottlenecks. These objects are subdivided by means of pools, placement groups and object storage devices (OSDs), and as such, are highly distributed. Next to that, objects can for a large degree be regarded as unstructured data which can grow into peta or exabytes in size. Furthermore, by the nature of Ceph, there is no central point of contact or broker, and as such, there is no central object allocation table. These elements make for a challenge to any forensic investigator meaning to investigate the cluster. 
+
+Applying triage to such a large, unorganized corpus of storage would be a necessary step. To this end, we have created this timeline utility which can be used to investiage and apply triage in a live forensics investigation a Ceph system.
+
+
+## Documentation ## 
+
+The repository includes the following: 
+ - ceph-extract.py: a script which extracts object and cluster metadata
+ - ceph-simulate.py: a script which fills a cluster in a random manner
+ - index.html: a dashboard in DC.js for vizualizing a ceph cluster
+ - data.json: example dataset, consumed by index.html
+ - data-jsonify: a script to convert the 'ceph-objects' sqllite db
+ - data-random-epoch.py: a script for randomizing epoch timestamps in data.json 
