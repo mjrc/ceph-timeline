@@ -19,3 +19,33 @@ The repository includes the following:
  - data.json: example dataset, consumed by index.html
  - data-jsonify: a script to convert the 'ceph-objects' sqllite db
  - data-random-epoch.py: a script for randomizing epoch timestamps in data.json 
+
+
+### Configuration  ### 
+Before extraction script relies on a configuration and keyring file in order to communicate with a Ceph clusters. These are currently hard coded to be './ceph.conf' and './ceph.client.admin.keyring', and are expected to have a format such as below.
+
+
+#### ceph.conf ####
+```
+[global]
+fsid = a2bad4b9-f50c-46df-987a-cc6d2a2db114
+mon_initial_members = ceph1
+mon_host = <insert_ip_address_here>
+auth_cluster_required = cephx
+auth_service_required = cephx
+auth_client_required = cephx
+
+[mon]
+mon_allow_pool_delete = true
+``` 
+For more information, see http://docs.ceph.com/docs/master/rados/configuration/ceph-conf/
+
+#### ceph.client.admin.keyring ####
+```
+[client.admin]
+    key = AQARbphajODeCRBBPHpEZfDezGkP2r/BDzJPgg==
+~                                                     
+```
+For more information, see http://docs.ceph.com/docs/master/rados/configuration/auth-config-ref/
+
+### 

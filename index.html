@@ -1,17 +1,535 @@
 <!DOCTYPE html>
 <html>
-	<head>
-		<title>Ceph Timeline Utility</title>
-	</head>
-	<body>
-		<nav>
-			<ul>
-				<li><a href="/">Home</a></li>
-			</ul>
-		</nav>
-		<div class="container">
-        		<h1>Ceph Timeline Utility</h1>
-    		<div>
-		</div>
-	</body>
+    <head>
+        <title>Ceph Timeline Crossfilter</title>
+        <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/dc/2.1.9/dc.css"/>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+        <script type="text/javascript" src="https://rawgithub.com/NickQiZhu/dc.js/master/web/js/crossfilter.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.js"></script>
+        <script type="text/javascript" src="https://dc-js.github.io/dc.js/js/dc.js"></script>
+        <meta charset="utf-8"/>
+    </head>
+    <body>
+
+        <div class="container-fluid">
+            <!-- Nav tabs -->
+                <!-- <ul class="nav nav-tabs" role="tablist">
+                    <li role="presentation" class="active"><a href="#1" aria-controls="1" role="tab" data-toggle="tab">Home</a></li>
+                    <li role="presentation"><a href="#2" aria-controls="2" role="tab" data-toggle="tab">Profile</a></li>
+                    <li role="presentation"><a href="#3" aria-controls="3" role="tab" data-toggle="tab">Messages</a></li>
+                    <li role="presentation"><a href="#4" aria-controls="4" role="tab" data-toggle="tab">Settings</a></li>
+                </ul>
+                
+                
+                <!-- Tab panes -->
+                <!-- <div class="tab-content">
+                    
+
+                        
+                    </div>
+                    <div role="tabpanel" class="tab-pane" id="2">2</div>
+                    <div role="tabpanel" class="tab-pane" id="3">3</div>
+                    <div role="tabpanel" class="tab-pane" id="4">4</div>
+                    <div role="tabpanel" class="tab-pane" id="5">5</div>
+                    <div role="tabpanel" class="tab-pane" id="6">6</div>
+                    <div role="tabpanel" class="tab-pane" id="7">7</div>
+                    <div role="tabpanel" class="tab-pane" id="8">8</div>
+                </div> -->
+    
+                <div role="tabpanel" class="tab-pane" id="1">
+                        <div class="row">
+                                <div id="cephYearChart" style="margin: 10px;"></div>
+                                <div id="cephMonthChart" style="margin: 10px;"></div>
+                            </div>
+                            
+                            <hr>
+                
+                            <div class="row">
+                                <div id="cephWeekChart" style="margin: 10px;"></div>
+                                <div id="cephWeekDayChart" style="margin: 10px;"></div>
+                            </div>
+                            
+                            <hr>
+                
+                            <div class="row">
+                                <div id="cephPiePool" style="margin: 15px;"></div>
+                                <div id="cephPieWeekday" style="margin: 15px;"></div>
+                                <div id="cephPieSize" style="margin: 15px;"></div>
+                            </div>
+                        
+                            <hr>
+                
+                            <div class="row">
+                                <div id="cephPieIsRBD" style="margin: 15px;"></div>
+                                <div id="cephChartRBDId" style="margin: 15px;"></div>
+                                <div id="cephChartRBDType" style="margin: 15px;"></div>
+                            </div>
+                        
+                            <hr>
+                
+                            <div class="row">
+                                <div id="cephLineChart" style="margin: 15px;"></div>
+                            </div>
+                
+                            <hr>
+                            
+                            <div class="row">
+                                <div class="">
+                                    <div id="paging">
+                                            Showing <span id="begin"></span>-<span id="end"></span> of <span id="size"></span>.
+                                            <input id="last" class="btn" type="Button" value="Last" onclick="javascript:last()"/>
+                                            <input id="next" class="btn" type="button" value="Next" onclick="javascript:next()"/>
+                                    </div>
+                                    <table class='table table-hover cephDataTable'></table>
+                                </div>
+                            </div>
+
+                        
+
+    
+        </div>
+
+        
+
+
+
+
+
+
+
+        <script type="text/javascript">
+            
+            // Request the data 
+
+            function loadJSON(callback) {   
+
+                let xobj = new XMLHttpRequest();
+
+                xobj.overrideMimeType("application/json");
+                xobj.open('GET', 'data.json', true); 
+                xobj.onreadystatechange = function checkReturnValue () {
+                    if (xobj.readyState == 4 && xobj.status == "200") {
+                        callback(xobj.responseText);
+                    }
+                };
+                
+                xobj.send(null);  
+            }
+
+            // Returns the ISO week of the date.
+            Date.prototype.getWeek = function() {
+                var date = new Date(this.getTime());
+                date.setHours(0, 0, 0, 0);
+                // Thursday in current week decides the year.
+                date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
+                // January 4 is always in week 1.
+                var week1 = new Date(date.getFullYear(), 0, 4);
+                // Adjust to Thursday in week 1 and count number of weeks from date to week1.
+                return 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000
+                                        - 3 + (week1.getDay() + 6) % 7) / 7);
+            }
+
+            // // Returns the four-digit year corresponding to the ISO week of the date.
+            // Date.prototype.getWeekYear = function() {
+            //     var date = new Date(this.getTime());
+            //     date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
+            //     return date.getFullYear();
+            // }
+
+
+            
+            var cephObjects
+                        // Graphing the stuff with dc.js
+
+            var cephYearChart = dc.barChart("#cephYearChart")
+            var cephMonthChart = dc.barChart("#cephMonthChart")
+            var cephWeekChart = dc.barChart("#cephWeekChart")
+            var cephWeekDayChart = dc.barChart("#cephWeekDayChart");
+
+            var cephPiePool = dc.pieChart("#cephPiePool");
+            var cephPieSize = dc.pieChart("#cephPieSize");
+
+            var cephPieIsRBD = dc.pieChart("#cephPieIsRBD");
+            var cephChartRBDId = dc.barChart("#cephChartRBDId");
+            var cephChartRBDType = dc.barChart("#cephChartRBDType");
+
+            var cephLineChart = dc.lineChart('#cephLineChart');
+            var cephDataTable = dc.dataTable('.cephDataTable');
+
+                
+            loadJSON(function(response) {
+                
+                // Parse the data 
+
+                let json_data = JSON.parse(response);
+
+                // Create crossfilter of our data
+
+                cephObjects = crossfilter(json_data)
+                let all = cephObjects.groupAll();
+
+
+                // Format the data
+
+                var yearDayFormat = d3.time.format("%j");
+                var weekDayFormat = d3.time.format("%w");
+
+                json_data.forEach(function (i) {
+                    i.mtime = new Date(i.mtime * 1000);
+                    switch(i.mtime_weekday) {
+                        case 0: i.mtime_weekday = 'Sun'; break;
+                        case 1: i.mtime_weekday = 'Mon'; break;
+                        case 2: i.mtime_weekday = 'Tue'; break;
+                        case 3: i.mtime_weekday = 'Wed'; break;
+                        case 4: i.mtime_weekday = 'Thu'; break;
+                        case 5: i.mtime_weekday = 'Fri'; break;
+                        case 6: i.mtime_weekday = 'Sat'; break;
+                    }
+                    // i.object_mtime_yearday = weekDayFormat.parse(i.object_mtime_yearday)
+                    // i.object_mtime_weekday = dayFormat.parse(i.object_mtime_weekday)
+                });
+
+                console.log(json_data)
+
+                // Calculate some general values
+
+                let totalObjects = cephObjects.groupAll().reduceCount().value();
+                let totalSizeInBytes = cephObjects.groupAll().reduceSum(item => item.size).value()
+                let totalSizeInMBytes = (totalSizeInBytes / 1024) / 1024
+
+                console.log(`Total objects: ${totalObjects}`)
+                console.log(`Total size: ${totalSizeInBytes} bytes or ${totalSizeInMBytes} MB`)
+
+
+
+                // Create single dimensions
+
+                // by date 
+                let dimensionDate = cephObjects.dimension(item => item.mtime.toUTCString())
+                let dimensionYear = cephObjects.dimension(item => item.mtime.getFullYear())
+                let dimensionMonth = cephObjects.dimension(item => item.mtime.getMonth())
+                let dimensionWeek = cephObjects.dimension(item => item.mtime.getWeek())
+                let dimensionWeekDay = cephObjects.dimension(item => item.mtime_weekday)
+
+
+                let dimensionPool = cephObjects.dimension(item => item.pool_name)
+                let dimensionSize = cephObjects.dimension(item => item.size)
+                let dimensionModificationTime = cephObjects.dimension(item => new Date(item.mtime * 1000))               
+                
+                
+                // RBD related dimensions
+
+                let dimensionIsRBD = cephObjects.dimension(item => item.rbd)
+                let dimensionRBDId = cephObjects.dimension(item => item.rbd_id)
+                let dimensionRBDType = cephObjects.dimension(item => item.rbd_type)
+            
+
+                // Create combined dimensions 
+
+                let dimensionPoolAndWeekday = cephObjects.dimension(item => item.pool_name + '_' + item.mtime_weekday)
+                
+
+                // Sum over the different dimensions 
+                
+                let quantityByYear = dimensionYear.group().reduceCount()
+                let quantityByMonth = dimensionMonth.group().reduceCount()
+                let quantityByWeek = dimensionWeek.group().reduceCount()
+                let quantityByWeekDay = dimensionWeekDay.group().reduceCount()
+
+
+                // console.log('quantityByYear', quantityByYear.all())
+                // console.log('quantityByMonth', quantityByMonth.all())
+                // console.log('quantityByWeek', quantityByWeek.all())
+                // console.log('quantityByWeekDay', quantityByWeekDay.all())
+
+
+
+                let quantityByPool = dimensionPool.group().reduceCount()
+                // console.log('quantityByPool', quantityByPool.all())
+
+
+                let quantityBySize = dimensionSize.group().reduceSum(item => item.size)
+                let quantityByPoolAndWeekday = dimensionPoolAndWeekday.group().reduceSum(item => item.quantity).all()
+
+
+                let quantityByIsRBD = dimensionIsRBD.group().reduceCount()
+                let quantityByRBDId = dimensionRBDId.group().reduceCount()
+                let quantityByRBDType = dimensionRBDType.group().reduceCount()
+
+            
+
+
+
+                // Get the numbers of items by category ??
+
+                let numberByPool = dimensionPool.group().reduceSum(item => 1)
+                console.log('numberByPool', numberByPool.all())
+
+
+                cephYearChart 
+                    .width(840)
+                    .height(240)
+                    .x(d3.scale.ordinal())
+                    .xUnits(dc.units.ordinal)
+                    // .xUnits(d3.time.years)
+                    // .xUnits(function (d) {
+                    //     var format = d3.format(dc.units.ordinal);
+                    //     console.log(dc.units.ordinal())
+                    // })
+                    // .tickFormat(d3.format('02d))
+                    .xAxisLabel("Year")
+                    .yAxisLabel("No. of Objects")
+                    .elasticX(false)
+                    .dimension(dimensionYear)
+                    .group(quantityByYear)
+                    .render();
+
+
+
+
+                // .domain(["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]))
+
+                cephMonthChart 
+                    .width(360)
+                    .height(240)
+                    .x(d3.scale.ordinal())
+                    .xUnits(dc.units.ordinal)
+                    .xAxisLabel("Month")
+                    .yAxisLabel("No. of Objects")
+                    .elasticX(false)
+                    .dimension(dimensionMonth)
+                    .group(quantityByMonth)
+                    .render();
+
+
+                cephWeekChart 
+                    .width(840)
+                    .height(240)
+                    .x(d3.scale.ordinal())
+                    .xUnits(dc.units.ordinal)
+                    .xAxisLabel("Week number")
+                    .yAxisLabel("No. of Objects")
+                    .elasticX(false)
+                    .dimension(dimensionWeek)
+                    .group(quantityByWeek)
+                    .render();
+
+
+                cephWeekDayChart 
+                    .width(360)
+                    .height(240)
+                    .x(d3.scale.ordinal())
+                    .xUnits(dc.units.ordinal)
+                    .xAxisLabel("Weekday")
+                    .yAxisLabel("No. of Objects")
+                    .elasticX(true)
+                    .dimension(dimensionWeekDay)
+                    .group(quantityByWeekDay)
+                    .render();
+
+
+
+
+
+                cephPiePool
+                    .width(200)
+                    .height(200)
+                    .label(function(d) {
+                    return d.key + ': ' + d.value; 
+                })
+                    .dimension(dimensionPool)
+                    .group(quantityByPool)
+                    .render()
+
+
+
+
+
+
+                cephPieSize
+                    .width(200)
+                    .height(200)
+                    .label(function(item) {
+                    return item.key + ': ' + item.value; 
+                })
+                    .dimension(dimensionSize)
+                    .group(quantityBySize)
+                    .render()
+
+
+                cephPieIsRBD
+                    .width(200)
+                    .height(200)
+                    // .innerRadius(25)
+                    .radius(100)
+                    .label(function(item) {
+                        if (item.key === 1) {
+                            return "RBD objects (" + item.value + ")"
+                        } else { 
+                            return "Other (" + item.value + ")"
+                        }
+                    })
+                    .transitionDuration(500)
+                    .colors(['#3182bd', '#6baed6', '#9ecae1', '#c6dbef', '#dadaeb'])
+                    // .colorDomain([-1750, 1644])
+                    .dimension(dimensionIsRBD)
+                    .group(quantityByIsRBD)
+                    .render()
+
+
+                cephChartRBDId
+                    .width(620)
+                    .height(240)
+                    .x(d3.scale.ordinal())
+                    .xUnits(dc.units.ordinal)
+                    .xAxisLabel("RBD images")
+                    .yAxisLabel("No. of Objects")
+                    .renderHorizontalGridLines(true)
+                    .renderVerticalGridLines(true)
+                    .elasticX(true)
+                    .elasticY(true)
+                    .dimension(dimensionRBDId)
+                    .group(quantityByRBDId)
+                    .render();
+
+                cephChartRBDType
+                    .width(360)
+                    .height(240)
+                    .x(d3.scale.ordinal())
+                    .xUnits(dc.units.ordinal)
+                    .xAxisLabel("RBD type")
+                    .yAxisLabel("No. of Objects")
+                    // .renderHorizontalGridLines(true)
+                    // .renderVerticalGridLines(true)
+                    // .elasticX(true)
+                    // .elasticY(true)
+                    .dimension(dimensionRBDType)
+                    .group(quantityByRBDType)
+                    .render();
+
+
+
+                cephLineChart
+                    // .renderArea(true)
+                    .width(990)
+                    .height(200)
+                    .transitionDuration(1000)
+                    .dimension(dimensionDate)
+                    .group(function (item) {
+                        var format = d3.format('02d');
+                        return '<b>' + item.mtime.getFullYear() + '/' + format((item.mtime.getMonth() + 1)) +  '</b>';
+                    })
+                    .mouseZoomable(true)
+                    // .rangeChart(cephDataTable)
+                    // .x(d3.time.scale().domain([new Date(1985, 0, 1), new Date(2012, 11, 31)]))
+                    .round(d3.time.month.round)
+                    .xUnits(d3.time.months)
+                    .elasticY(true)
+                    .renderHorizontalGridLines(true)
+
+
+
+
+                cephDataTable
+                    .dimension(dimensionDate)
+                    .group(function (item) {
+                        var format = d3.format('02d');
+                        return '<b>' + item.mtime.getFullYear() + '/' + format((item.mtime.getMonth() + 1)) +  '</b>';
+                    })
+                    // .size(25)
+                    .size(Infinity)
+                    .columns([
+                        {
+                            label: "Pool",
+                            format: function (item) { return item.pool_name; }
+                        },
+                        {
+                            label: "Key",
+                            format: function (item) { return item.key; }
+                        },
+                        {
+                            label: "Namespace",
+                            format: function (item) { return item.namespace }
+                        },
+                        {
+                            label: "Modification Time",
+                            format: function (item) { return item.mtime }
+                        },
+                        {
+                            label: "Size",
+                            format: item => item.size
+                        },
+                        {
+                            label: "rbd_id",
+                            format: item => item.rbd_id
+                        },
+                        {
+                            label: "rbd_type",
+                            format: item => item.rbd_type
+                        },
+                        {
+                            label: "rbd_type",
+                            format: item => item.rbd_offset
+                        }
+                    ])
+                    .sortBy(function (item) {
+                        return item.mtime;
+                    })
+                    .order(d3.descending)
+                    .render()
+            });
+
+
+
+
+            // async otherwise cephObjects is undefined
+
+            setTimeout(function(){ 
+                console.log(cephObjects)
+                console.log("HALO!")
+
+
+                var ofs = 0, pag = 20;
+                window.display = function() {
+                    d3.select('#begin')
+                        .text(ofs);
+                    d3.select('#end')
+                        .text(ofs+pag-1);
+                    d3.select('#last')
+                        .attr('disabled', ofs-pag<0 ? 'true' : null);
+                    d3.select('#next')
+                        .attr('disabled', ofs+pag>=cephObjects.size() ? 'true' : null);
+                    d3.select('#size').text(cephObjects.size());
+                }
+                window.update = function () {
+                    cephDataTable.beginSlice(ofs);
+                    cephDataTable.endSlice(ofs+pag);
+                    display();
+                }
+                window.next = function () {
+                    ofs += pag;
+                    update();
+                    cephDataTable.redraw();
+                }
+                window.last = function () {
+                    ofs -= pag;
+                    update();
+                    cephDataTable.redraw();
+
+
+                
+
+
+                }
+            
+            }, 1000);
+            
+           
+            
+
+
+        </script>
+
+
+    </body>
 </html>
