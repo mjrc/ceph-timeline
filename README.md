@@ -1,6 +1,6 @@
 # Ceph Timeline Utility 
 
-A forensic timeline utility for the Ceph Object Store. This utility is the product of the research peformed by Chris Kuipers and Mick Cox, for the Computer Crime & Forensics Course, System & Network Engineering, University of Amsterdam.  
+A forensic timeline utility for the [Ceph Object Store]((https://ceph.com/). This utility is the product of the research peformed by Chris Kuipers and Mick Cox, for the Computer Crime & Forensics Course, [System & Network Engineering](https://www.os3.nl/), University of Amsterdam.  
 
 <p align="center">
   <img width="600" src="https://raw.githubusercontent.com/mjrc/ceph-timeline/master/images/sne-ceph.png">
