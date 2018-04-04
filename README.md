@@ -4,6 +4,7 @@ A forensic timeline utility for the Ceph Object Store. This utility is the produ
 
 <p align="center">
   <img width="250" src="https://raw.githubusercontent.com/mjrc/ceph-timeline/master/images/sne.png">
+  <div style="padding: 35px;"></div>
   <img width="250" src="https://raw.githubusercontent.com/mjrc/ceph-timeline/master/images/ceph.png">
 </p>
 
